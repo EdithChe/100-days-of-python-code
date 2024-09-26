@@ -30,16 +30,17 @@ resources = {
     "water": 300,
     "milk": 200,
     "coffee": 100,
+    "money" : 0
 }
 
 
-def print_report():
-    pass
-
-
+def retrieve_drink_cost(drink):
+    cost = MENU[drink]["cost"]
+    return cost
 
 
 def process_coins():
+    """Returns the total calculated from coins inserted."""
     total = 0
     print("Please insert coins.")
     total += int(input("how many quarters?: ")) * 0.25
@@ -50,71 +51,62 @@ def process_coins():
     return total
 
 
-def check_cost():
+def check_cost_and_update_resources(drink):
+    """Checks if inserted money is sufficient and deducts the required ingredients from the resources."""
     payment = process_coins()
-    for drink, details in MENU.items():
-        if payment >= details["cost"]:
-            money = round(payment - details["cost"], 2)
-            resources["money"] = money
-            resources["water"] -= details["ingredients"]["water"]
-            resources["coffee"] -= details["ingredients"]["coffee"]
-            #resources["milk"] -= details["ingredients"]["milk"]
-            print(f"Here is ${money}")
-            print(f"Here is your {drink}. Enjoy!")
-        else:
-            print("Sorry that's not enough money. Money refunded.")
+    drink_cost = retrieve_drink_cost(drink)
 
-def check_against_resources():
-    pass
+    if payment >= drink_cost:
+        money = round(drink_cost, 2)
+        refund = round(payment - MENU[drink]["cost"], 2)
+        resources["money"] += money
+        resources["water"] -= MENU[drink]["ingredients"]["water"]
+        resources["coffee"] -= MENU[drink]["ingredients"]["coffee"]
 
-#prompt should show every time action has completed
-prompt = True
+        if "milk" in MENU[drink]["ingredients"]:
+            resources["milk"] -= MENU[drink]["ingredients"]["milk"]
 
-while prompt:
+        print(f"Here is ${refund}")
+        print(f"Here is your {drink}. Enjoy!")
+
+    else:
+        print("Sorry that's not enough money. Money refunded.")
+
+
+def check_against_resources(drink):
+    """Returns True when order can be made, False if ingredients are insufficient."""
+    for item in MENU[drink]["ingredients"]:
+        if resources[item] < MENU[drink]["ingredients"][item]:
+            print(f"Sorry, there is not enough {item}.")
+            return False
+    return True
+
+
+while True:
     choice = input("What would you like? (espresso/latte/cappuccino): ")
-
 
     #maintainers of the machine can shut down the machine by using 'off'
     if choice == 'off':
         sys.exit()
 
-
     if choice == 'report':
-        print(resources)
-
+        print(f"Water: {resources['water']}ml")
+        print(f"Milk: {resources['milk']}ml")
+        print(f"Coffee: {resources['coffee']}g")
+        print(f"Money: ${resources['money']}")
+        continue
 
     if choice == 'espresso':
-        check_cost()
+        if check_against_resources(choice):
+            check_cost_and_update_resources(choice)
 
-        #     #check ingredients against resources
-        #     #if not enough resources, "Sorry there is not enough {resources}."
+    elif choice == 'latte':
+        if check_against_resources(choice):
+            check_cost_and_update_resources(choice)
 
+    elif choice == 'cappuccino':
+        if check_against_resources(choice):
+            check_cost_and_update_resources(choice)
 
-
-    # prompt the user to insert coins
-    #quarters = $0.25, dimes = $0.10, nickles = $0.05, pennies = $0.01
-    #calculate the monetary value of the coins inserted. E.g. 1 quarter, 2 dimes, 1 nickel, 2
-    #pennies = 0.25 + 0.1 x 2 + 0.05 + 0.01 x 2 = $0.52
-
-
-    #if enough money, resources gets updated with the profit and next time asking for a report the money will show up,
-    # other resources get updated
-    #if too much money inserted, the user gets refunded
-    #if not enough money, "Sorry that's not enough money. Money refunded."
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    else:
+        print("Choose a valid drink.")
